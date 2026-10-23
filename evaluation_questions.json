@@ -1,0 +1,122 @@
+[
+    {
+        "id": 1,
+        "question": "How many days of annual paid leave do employees receive?",
+        "expected_answer": "Employees receive 20 days of annual paid leave.",
+        "expected_source": "Sample.txt"
+    },
+    {
+        "id": 2,
+        "question": "Who must approve leave requests?",
+        "expected_answer": "The employee's manager must approve leave requests.",
+        "expected_source": "Sample.txt"
+    },
+    {
+        "id": 3,
+        "question": "How is unused leave handled?",
+        "expected_answer": "Unused leave is handled according to company policy.",
+        "expected_source": "Sample.txt"
+    },
+    {
+        "id": 4,
+        "question": "How many days of annual paid leave do employees receive, and who approves leave requests?",
+        "expected_answer": "Employees receive 20 days of annual paid leave, and their manager must approve leave requests.",
+        "expected_source": "Sample.txt"
+    },
+    {
+        "id": 5,
+        "question": "What are the three main points of the company leave policy?",
+        "expected_answer": "Employees receive 20 days of annual paid leave, leave requests must be approved by the employee's manager, and unused leave is handled according to company policy.",
+        "expected_source": "Sample.txt"
+    },
+    {
+        "id": 6,
+        "question": "Where does the presentation layer run?",
+        "expected_answer": "The presentation layer runs in the browser inside an Atlassian iframe.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 7,
+        "question": "Where do the API resolvers run?",
+        "expected_answer": "The API resolvers run as Forge functions.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 8,
+        "question": "Which file contains the resolver definitions?",
+        "expected_answer": "The resolver definitions are in src/index.js.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 9,
+        "question": "Which storage mechanism does the application use?",
+        "expected_answer": "The application uses Forge KVS through @forge/kvs.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 10,
+        "question": "Does the application use Forge SQL or custom entities for persistence?",
+        "expected_answer": "No. The application uses KVS only and does not use Forge SQL or custom entities.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 11,
+        "question": "What is the difference between api.asUser() and api.asApp()?",
+        "expected_answer": "api.asUser() makes requests using the current user's permissions and attributes changes to that user. api.asApp() uses the application's identity.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 12,
+        "question": "Which identity does this application use for Confluence and Jira API calls?",
+        "expected_answer": "The application uses api.asUser() for Confluence and Jira calls. It does not use api.asApp().",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 13,
+        "question": "How does the application handle a drafting proposal before publishing it?",
+        "expected_answer": "The UI displays the proposal as a diff, and the project manager edits and approves it before the application saves or publishes the page.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 14,
+        "question": "Why does the application use a job-and-polling design for agent requests?",
+        "expected_answer": "The resolver has a function time limit, so it returns a job ID immediately and the browser polls for the result instead of waiting for the agent to finish.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 15,
+        "question": "What happens after Jira issues are created?",
+        "expected_answer": "The created issues are posted to local-flow-service so the knowledge bundle stays current.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 16,
+        "question": "What triggers analysis of Confluence pages?",
+        "expected_answer": "Confluence page creation and update events trigger the handler, which forwards the event to the flow service and requests analysis.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 17,
+        "question": "What is the current status of the agent server endpoints?",
+        "expected_answer": "The four job-based agent server endpoints are placeholders and are planned, not yet live.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 18,
+        "question": "What are the request timeouts for the agent server and context service?",
+        "expected_answer": "The agent request timeout is 20 seconds per call, and the context service request timeout is 10 seconds.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 19,
+        "question": "How many sessions are kept per account?",
+        "expected_answer": "The application keeps up to 25 sessions per account.",
+        "expected_source": "03-architecture.docx.pdf"
+    },
+    {
+        "id": 20,
+        "question": "What is the maximum page text length sent to the agent, and what is the parent text limit?",
+        "expected_answer": "The page text sent to the agent is capped at 24,000 characters, and the parent text limit is 8,000 characters.",
+        "expected_source": "03-architecture.docx.pdf"
+    }
+]
