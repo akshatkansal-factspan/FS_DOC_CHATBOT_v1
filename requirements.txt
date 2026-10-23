@@ -12,3 +12,5 @@ streamlit
 langchain-ollama
 langchain-groq
 faiss-cpu
+langchain-huggingface
+sentence-transformers

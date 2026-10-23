@@ -1,11 +1,8 @@
 
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.config import (
-    OLLAMA_EMBED_MODEL,
-    VECTORSTORE_DIR,
-)
+from src.config import VECTORSTORE_DIR
 from src.ingestion.loader import load_documents
 from src.ingestion.splitter import split_documents
 
@@ -29,8 +26,10 @@ def ingest_documents():
 
     print(f"Created {len(chunks)} chunks.", flush=True)
 
-    print("Initializing Ollama embeddings...", flush=True)
-    embeddings = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
+    print("Initializing Hugging Face embeddings...", flush=True)
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     print("Creating FAISS vector store...", flush=True)
     vectorstore = FAISS.from_documents(

@@ -1,13 +1,15 @@
 
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.config import OLLAMA_EMBED_MODEL, VECTORSTORE_DIR, RETRIEVAL_K
+from src.config import VECTORSTORE_DIR, RETRIEVAL_K
 
 
 def load_vectorstore():
     """Load the persisted FAISS vector store."""
-    embeddings = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     return FAISS.load_local(
         str(VECTORSTORE_DIR),
@@ -20,7 +22,6 @@ def get_retriever(k: int | None = None):
     """Create a retriever using the requested number of chunks."""
     vectorstore = load_vectorstore()
 
-    # Use the configured default when k isn't provided.
     if k is None:
         k = RETRIEVAL_K
 
