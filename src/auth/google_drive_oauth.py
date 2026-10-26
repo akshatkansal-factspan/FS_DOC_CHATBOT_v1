@@ -90,6 +90,7 @@ def start_google_oauth():
     return auth_url
 
 
+
 def process_google_oauth_callback():
     code = st.query_params.get("code")
     if not code:
@@ -104,10 +105,20 @@ def process_google_oauth_callback():
             "Please sign in again."
         )
 
+    code_verifier = st.session_state.get("google_drive_code_verifier")
+    if not code_verifier:
+        st.query_params.clear()
+        raise ValueError(
+            "Google sign-in session expired. "
+            "Please click 'Sign in with Google Drive' and try again."
+        )
+
     flow = _new_flow(state=returned_state)
+    flow.code_verifier = code_verifier
     flow.fetch_token(code=code)
 
     st.session_state["google_drive_credentials"] = flow.credentials
+    st.session_state.pop("google_drive_code_verifier", None)
     st.query_params.clear()
 
 
