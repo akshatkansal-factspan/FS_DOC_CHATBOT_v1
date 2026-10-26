@@ -84,7 +84,10 @@ with st.expander("📁 Import documents from Google Drive", expanded=False):
                             )
                         st.rerun()
                     except Exception as error:
+                        import traceback
+
                         st.error(f"Google Drive ingestion failed: {error}")
+                        st.code(traceback.format_exc())
     else:
         st.write(
             "Sign in with the Google account that can access the folder. "
