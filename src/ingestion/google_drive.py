@@ -150,18 +150,55 @@ def ingest_google_drive_folder(folder_url, credentials):
         )
 
         # Keep existing local documents, but replace prior chunks from this same Drive folder.
+        
+        # Load the existing index and keep the same embedding model everywhere.
         try:
             vectorstore = load_vectorstore()
-            existing_ids = [
-                doc_id
-                for doc_id, doc in vectorstore.docstore._dict.items()
-                if doc.metadata.get("drive_folder_id") == folder_id
+
+            existing_docs = list(vectorstore.docstore._dict.values())
+
+            # Remove old chunks from this folder in memory.
+            remaining_docs = [
+                doc for doc in existing_docs
+                if doc.metadata.get("drive_folder_id") != folder_id
             ]
-            if existing_ids:
-                vectorstore.delete(ids=existing_ids)
-            vectorstore.add_documents(chunks)
+
+            # Detect a legacy index built with a different embedding dimension.
+            new_dimension = len(embeddings.embed_query("dimension check"))
+            old_dimension = vectorstore.index.d
+
+            if old_dimension != new_dimension:
+                # Rebuild using all existing documents except this folder,
+                # then add the newly ingested Drive chunks.
+                all_documents = remaining_docs + chunks
+                vectorstore = FAISS.from_documents(
+                    documents=all_documents,
+                    embedding=embeddings,
+                )
+            else:
+                existing_ids = [
+                    doc_id
+                    for doc_id, doc in vectorstore.docstore._dict.items()
+                    if doc.metadata.get("drive_folder_id") == folder_id
+                ]
+
+                if existing_ids:
+                    vectorstore.delete(ids=existing_ids)
+
+                vectorstore.add_documents(chunks)
+
         except (FileNotFoundError, RuntimeError, ValueError):
-            vectorstore = FAISS.from_documents(chunks, embeddings)
+            # If no usable index exists, rebuild with local documents too.
+            local_documents = load_documents()
+            local_chunks = split_documents(local_documents)
+
+            # Avoid duplicating the Drive chunks in the rebuild.
+            all_documents = local_chunks + chunks
+
+            vectorstore = FAISS.from_documents(
+                documents=all_documents,
+                embedding=embeddings,
+            )
 
         VECTORSTORE_DIR.mkdir(parents=True, exist_ok=True)
         vectorstore.save_local(str(VECTORSTORE_DIR))
