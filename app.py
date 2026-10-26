@@ -1,9 +1,14 @@
-
 import streamlit as st
 import uuid
 
 from src.graph.builder import build_graph
 from src.ingestion.ingest import ingest_documents
+from src.ingestion.google_drive import ingest_google_drive_folder
+from src.auth.google_drive_oauth import (
+    get_google_drive_credentials,
+    process_google_oauth_callback,
+    start_google_oauth,
+)
 from src.retrieval.retriever import load_vectorstore
 
 
@@ -22,8 +27,13 @@ st.caption("Ask questions about your uploaded documents.")
 
 
 # --------------------------------------------------
-# 2. Initialize session state
+# 2. Handle Google OAuth callback and session state
 # --------------------------------------------------
+
+try:
+    process_google_oauth_callback()
+except Exception as error:
+    st.error(f"Google sign-in failed: {error}")
 
 if "graph" not in st.session_state:
     st.session_state.graph = build_graph()
@@ -36,7 +46,64 @@ if "chat_history" not in st.session_state:
 
 
 # --------------------------------------------------
-# 3. Sidebar controls
+# 3. Google Drive folder import
+# --------------------------------------------------
+
+with st.expander("📁 Import documents from Google Drive", expanded=False):
+    credentials = get_google_drive_credentials()
+
+    if credentials:
+        st.success("Google Drive connected.")
+        if st.button("Disconnect Google Drive"):
+            st.session_state.pop("google_drive_credentials", None)
+            st.rerun()
+
+        folder_url = st.text_input(
+            "Google Drive folder URL",
+            placeholder="https://drive.google.com/drive/folders/...",
+            help="The signed-in Google account must have access to this folder.",
+            key="google_drive_folder_url",
+        )
+
+        if st.button("Ingest Drive folder", type="primary"):
+            if not folder_url.strip():
+                st.warning("Enter a Google Drive folder URL first.")
+            else:
+                with st.spinner("Reading files from Google Drive and updating the index..."):
+                    try:
+                        summary = ingest_google_drive_folder(folder_url, credentials)
+                        st.success(
+                            f"Drive import complete. Loaded {summary['files']} supported "
+                            f"files, created {summary['chunks']} chunks, and updated the index."
+                        )
+                        if summary["skipped"]:
+                            st.info(
+                                "Skipped unsupported Google Drive items: "
+                                + ", ".join(summary["skipped"][:10])
+                                + (" ..." if len(summary["skipped"]) > 10 else "")
+                            )
+                        st.rerun()
+                    except Exception as error:
+                        st.error(f"Google Drive ingestion failed: {error}")
+    else:
+        st.write(
+            "Sign in with the Google account that can access the folder. "
+            "Only supported document types are imported."
+        )
+        if st.button("Sign in with Google Drive", type="primary"):
+            try:
+                auth_url = start_google_oauth()
+                st.link_button("Continue to Google", auth_url, use_container_width=True)
+                st.info(
+                    "Select **Continue to Google** above. After consent, Google will "
+                    "return you to this app."
+                )
+            except Exception as error:
+                st.error(f"Could not start Google sign-in: {error}")
+
+
+# --------------------------------------------------
+# 4. Sidebar controls
 # --------------------------------------------------
 
 with st.sidebar:
@@ -49,11 +116,11 @@ with st.sidebar:
         help="Choose how many document chunks to search for each question.",
     )
 
-    if st.button("Re-ingest documents", use_container_width=True):
-        with st.spinner("Ingesting documents..."):
+    if st.button("Re-ingest local documents", use_container_width=True):
+        with st.spinner("Ingesting local documents..."):
             try:
                 ingest_documents()
-                st.success("Documents ingested successfully!")
+                st.success("Local documents ingested successfully!")
                 st.rerun()
             except Exception as error:
                 st.error(f"Ingestion failed: {error}")
@@ -77,7 +144,7 @@ with st.sidebar:
 
 
 # --------------------------------------------------
-# 4. Display existing conversation and sources
+# 5. Display existing conversation and sources
 # --------------------------------------------------
 
 for message in st.session_state.chat_history:
@@ -85,7 +152,6 @@ for message in st.session_state.chat_history:
         st.markdown(message["content"])
 
         sources = message.get("sources", [])
-
         if sources:
             with st.expander(f"Sources ({len(sources)})"):
                 for i, source in enumerate(sources, start=1):
@@ -94,14 +160,12 @@ for message in st.session_state.chat_history:
 
 
 # --------------------------------------------------
-# 5. Accept a question and run the graph
+# 6. Accept a question and run the graph
 # --------------------------------------------------
 
 question = st.chat_input("Ask a question about your documents...")
 
 if question:
-
-    # Display and save the user's question
     st.session_state.chat_history.append({
         "role": "user",
         "content": question,
@@ -130,55 +194,32 @@ if question:
     result = None
     source_details = []
 
-    # Run the existing LangGraph workflow
     with st.chat_message("assistant"):
         with st.spinner("Searching your documents..."):
             try:
-                result = st.session_state.graph.invoke(
-                    initial_state,
-                    config=config,
-                )
-
-                answer = result.get(
-                    "generation",
-                    "I couldn't generate an answer.",
-                )
-
+                result = st.session_state.graph.invoke(initial_state, config=config)
+                answer = result.get("generation", "I couldn't generate an answer.")
             except Exception as error:
                 answer = f"An error occurred: {error}"
 
         st.markdown(answer)
 
-        # Extract sources from the graph's returned documents
         if result:
             for doc in result.get("documents", []):
                 filename = doc.metadata.get("source", "Unknown")
                 page = doc.metadata.get("page")
-
-                # PDF loaders often store pages as zero-based numbers
-                if isinstance(page, int):
-                    label = f"{filename}, page {page + 1}"
-                else:
-                    label = filename
-
+                label = f"{filename}, page {page + 1}" if isinstance(page, int) else filename
                 excerpt = doc.page_content[:400]
-
                 if len(doc.page_content) > 400:
                     excerpt += "..."
+                source_details.append({"label": label, "excerpt": excerpt})
 
-                source_details.append({
-                    "label": label,
-                    "excerpt": excerpt,
-                })
-
-        # Display sources under the answer
         if source_details:
             with st.expander(f"Sources ({len(source_details)})"):
                 for i, source in enumerate(source_details, start=1):
                     st.markdown(f"**{i}. {source['label']}**")
                     st.caption(source["excerpt"])
 
-    # Save answer and source information for future reruns
     st.session_state.chat_history.append({
         "role": "assistant",
         "content": answer,

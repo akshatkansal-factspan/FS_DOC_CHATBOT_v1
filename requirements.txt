@@ -14,3 +14,8 @@ langchain-groq
 faiss-cpu
 langchain-huggingface
 sentence-transformers
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+

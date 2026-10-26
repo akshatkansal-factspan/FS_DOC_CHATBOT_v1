@@ -3,4 +3,13 @@
 __pycache__/
 *.py[cod]
 vectorstore/
+backup/
 .streamlit/secrets.toml
+src/ingestion/ingest old.py
+src/retrieval/retriever old.py
+FS_DOC_CHATBOT_v1/
+evaluation_results.json
+test_embeddings.py
+test_groq.py
+test_llm_groq.py
+test_llm_llama.py
