@@ -74,15 +74,19 @@ def _validate_oauth_state(state):
         return False
 
     
+
 def start_google_oauth():
-    """Build the Google consent URL and remember the OAuth state for callback validation."""
-    flow = _new_flow()
-    auth_url, state = flow.authorization_url(
+    """Build the Google consent URL with a signed OAuth state."""
+    state = _make_oauth_state()
+    flow = _new_flow(state=state)
+
+    auth_url, _ = flow.authorization_url(
+        state=state,
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
     )
-    st.session_state["google_drive_oauth_state"] = state
+
     return auth_url
 
 
@@ -104,12 +108,6 @@ def process_google_oauth_callback():
     flow.fetch_token(code=code)
 
     st.session_state["google_drive_credentials"] = flow.credentials
-    st.query_params.clear()
-
-    flow = _new_flow(state=expected_state)
-    flow.fetch_token(code=code)
-    st.session_state["google_drive_credentials"] = flow.credentials
-    st.session_state.pop("google_drive_oauth_state", None)
     st.query_params.clear()
 
 
