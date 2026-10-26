@@ -96,10 +96,12 @@ with st.expander("📁 Import documents from Google Drive", expanded=False):
         if st.button("Sign in with Google Drive", type="primary"):
             try:
                 auth_url = start_google_oauth()
-                st.markdown(f'<a href="{auth_url}" target="_self" style="display:block;text-align:center;'
-                    f'padding:0.5rem;border:1px solid #888;border-radius:0.5rem;'
-                    f'text-decoration:none;">Continue to Google</a>',
-                    unsafe_allow_html=True,)
+                st.link_button(
+                    "Continue to Google",
+                    auth_url,
+                    type="primary",
+                    width="stretch",
+                )
                 st.info(
                     "Select **Continue to Google** above. After consent, Google will "
                     "return you to this app."
